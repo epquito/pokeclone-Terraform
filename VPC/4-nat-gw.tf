@@ -1,5 +1,5 @@
 resource "aws_eip" "pokemon-nat" {
-    domain = "vpc"
+    vpc = true
     tags = {
       Name = "pokemon-nat"
     }
