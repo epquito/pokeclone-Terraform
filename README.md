@@ -5,7 +5,6 @@ This project provides a comprehensive Terraform configuration designed for deplo
 
 ## Project Structure
 
-VPC:
 - vpc.tf: Sets up the AWS VPC.
 - subnets.tf: Defines public and private subnets.
 - igw.tf: Creates the Internet Gateway.
