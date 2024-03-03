@@ -46,17 +46,21 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
 
   scaling_config {
     desired_size = 1
-    max_size     = 1
+    max_size     = 2
     min_size     = 1
   }
 
   update_config {
     max_unavailable = 1
   }
-
+  tags = {
+    Name = "pokemon-frontend-nodes"
+  }
   labels = {
     role = "frontend"
   }
+
+
 
   depends_on = [
     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
@@ -67,4 +71,12 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
     ec2_ssh_key = "devops-ew"
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
+}
+data "aws_eks_node_group" "pokemon" {
+  cluster_name    = "pokemon-cluster"
+  node_group_name = "pokemon-frontend-nodes"
+  depends_on = [ aws_eks_node_group.pokemon-frontend-nodes ]
+}
+output "autoscaling_group_names" {
+  value = [for group in data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups : group.name]
 }

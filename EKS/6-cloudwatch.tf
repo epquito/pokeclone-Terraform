@@ -9,84 +9,8 @@ resource "aws_sns_topic_subscription" "eks_cluster_alarms_email" {
   protocol  = "email"
   endpoint  = "edwinquito45@gmail.com"
 }
-
-// Metric alarm for cluster list
-resource "aws_cloudwatch_metric_alarm" "Cluster_list" {
-  alarm_name          = "ListCluster"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CallCount"
-  namespace           = "AWS/Usage"
-  period              = "60"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered after more than 1 cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name = aws_eks_cluster.pokemon-cluster.name
-  }
-}
-
-// Metric alarm for cluster node groups
-resource "aws_cloudwatch_metric_alarm" "Cluster_Node_groups" {
-  alarm_name          = "Cluster_Node_Groups"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CallCount"
-  namespace           = "AWS/EKS"
-  period              = "60"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered after more than 1 Node Group"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    node_group_name = "pokemon-frontend-nodes"
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "Cluster_Logs_Events" {
-  alarm_name          = "Cluster_Logs_Events"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "IncomingLogEvents"
-  namespace           = "AWS/Logs"
-  period              = "30"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered from log events within cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    log_group_name = "/aws/eks/pokemon-cluster/control-plane-logs"
-    
-  }
-}
-resource "aws_cloudwatch_metric_alarm" "Cluster_Incoming_bytes" {
-  alarm_name          = "Cluster_Incoming_bytes"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "IncomingBytes"
-  namespace           = "AWS/Logs"
-  period              = "30"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered from incoming bytes within cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    log_group_name = "/aws/eks/pokemon-cluster/control-plane-logs"
-    
-  }
-}
-
-// CloudWatch dashboard for EKS Cluster metrics
-resource "aws_cloudwatch_dashboard" "EKS_Cluster_metrics" {
-  dashboard_name = "EKS-Metrics"
+resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
+  dashboard_name = "EKS-CLuster-Terraform-Pokeclone"
 
   dashboard_body = jsonencode({
     widgets = [
@@ -94,99 +18,104 @@ resource "aws_cloudwatch_dashboard" "EKS_Cluster_metrics" {
         type   = "metric"
         x      = 0
         y      = 0
-        width  = 6
+        width  = 12
         height = 6
 
         properties = {
           metrics = [
             [
-              "AWS/Usage",
-              "CallCount",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
-            ],
+              "AWS/Usage",       # Namespace
+              "CallCount",       # Metric name
+              "Type",            # Dimension name
+              "API",             # Dimension value
+              "Resource",        # Dimension name
+              "ListClusters",    # Dimension value
+              "Service",         # Dimension name
+              "EKS",             # Dimension value
+              "Class",           # Dimension name
+              "None",            # Dimension value
+            ]
           ]
-          period = 30
+          period = 60
           stat   = "Average"
           region = "us-east-1"
-          title  = "Usage - CallCount"
+          title  = "List of EKS Clusters"
+          view   = "singleValue"
         }
       },
       {
         type   = "metric"
-        x      = 6
+        x      = 0
         y      = 0
-        width  = 6
+        width  = 12
         height = 6
 
         properties = {
           metrics = [
             [
-              "AWS/EKS",
-              "CallCount",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
-            ],
+              "AWS/Usage",       # Namespace
+              "CallCount",       # Metric name
+              "Type",            # Dimension name
+              "API",             # Dimension value
+              "Resource",        # Dimension name
+              "ListNodegroups",    # Dimension value
+              "Service",         # Dimension name
+              "EKS",             # Dimension value
+              "Class",           # Dimension name
+              "None",            # Dimension value
+            ]
           ]
-          period = 30
+          period = 60
           stat   = "Average"
           region = "us-east-1"
-          title  = "EKS - CallCount"
+          title  = "List of EKS Clusters node groups"
+          view   = "singleValue"
         }
       },
       {
         type   = "metric"
         x      = 0
-        y      = 6
-        width  = 6
+        y      = 0
+        width  = 12
         height = 6
 
         properties = {
           metrics = [
             [
-              "AWS/Logs",
-              "IncomingLogEvents",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
-            ],
+              "AWS/Logs",       # Namespace
+              "IncomingBytes",       # Metric name
+              "LogGroupName",        # Dimension name
+              "/aws/eks/pokemon-cluster/cluster",   
+            ]
           ]
-          period = 30
+          period = 60
           stat   = "Average"
           region = "us-east-1"
-          title  = "Logs - IncomingLogEvents"
+          title  = "Logs of eks IncomingBytes"
+          view   = "singleValue"
         }
       },
       {
         type   = "metric"
-        x      = 6
-        y      = 6
-        width  = 6
+        x      = 0
+        y      = 0
+        width  = 12
         height = 6
 
         properties = {
           metrics = [
             [
-              "AWS/Logs",
-              "IncomingBytes",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
-            ],
+              "AWS/Logs",       # Namespace
+              "IncomingLogEvents",       # Metric name
+              "LogGroupName",        # Dimension name
+              "/aws/eks/pokemon-cluster/cluster",   
+            ]
           ]
-          period = 30
+          period = 60
           stat   = "Average"
           region = "us-east-1"
-          title  = "Logs - IncomingBytes"
-        }
-      },
-      {
-        type   = "text"
-        x      = 0
-        y      = 12
-        width  = 3
-        height = 3
-
-        properties = {
-          markdown = "Pokemon cluster"
+          title  = "Logs of eks IncomingLogEvents"
+          view   = "singleValue"
         }
       },
     ]
