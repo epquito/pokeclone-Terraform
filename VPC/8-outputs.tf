@@ -7,7 +7,6 @@ output "subnet_ids" {
         aws_subnet.public-subnet-2.id,
         aws_subnet.private-subnet-1.id,
         aws_subnet.private-subnet-2.id,
-
     ]
   
 }
@@ -56,4 +55,9 @@ output "db_subnet_group_name" {
 
 output "db_instance_endpoint" {
     value = aws_db_instance.pokemonDatabase.endpoint
+}
+
+output "db_instance_identifier" {
+    value = aws_db_instance.pokemonDatabase.id
+  
 }
