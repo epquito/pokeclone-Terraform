@@ -4,9 +4,7 @@
 This project provides a comprehensive Terraform configuration designed for deploying a highly available and scalable Amazon Elastic Kubernetes Service (EKS) environment. It includes setups for a VPC, subnets, Internet Gateway (IGW), NAT Gateway, route tables, and an Amazon RDS instance, ensuring a robust infrastructure for containerized applications.
 
 ## Project Structure
-Describe each Terraform file and its purpose in the project. For example:
 
-VPC:
 - vpc.tf: Sets up the AWS VPC.
 - subnets.tf: Defines public and private subnets.
 - igw.tf: Creates the Internet Gateway.
