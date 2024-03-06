@@ -33,6 +33,11 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
 }
+# resource "aws_iam_role_policy_attachment" "nodes-AmazonSSMManagedInstanceCore" {
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonSSMManagedInstanceCore"
+#   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
+# }
+
 
 # EKS Node Group for Frontend in Public Subnets
 resource "aws_eks_node_group" "pokemon-frontend-nodes" {
@@ -72,6 +77,46 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
 }
+
+# # EKS Node Group for Frontend in Public Subnets
+# resource "aws_eks_node_group" "pokemon-backend-nodes" {
+#   cluster_name    = aws_eks_cluster.pokemon-cluster.name
+#   node_group_name = "pokemon-backend-nodes"
+#   node_role_arn   = aws_iam_role.pokemon-eks-node-group-nodes.arn
+
+#   subnet_ids = module.VPC.private_subnet_ids
+#   capacity_type  = "ON_DEMAND"
+#   instance_types = ["t2.small"]
+
+#   scaling_config {
+#     desired_size = 1
+#     max_size     = 2
+#     min_size     = 1
+#   }
+
+#   update_config {
+#     max_unavailable = 1
+#   }
+#   tags = {
+#     Name = "pokemon-backend-nodes"
+#   }
+#   labels = {
+#     role = "backend"
+#   }
+
+
+
+#   depends_on = [
+#     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
+#     aws_iam_role_policy_attachment.nodes-AmazonEKS_CNI_Policy,
+#     aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
+#     aws_iam_role_policy_attachment.nodes-AmazonSSMManagedInstanceCore,
+#   ]
+#   remote_access {
+#     ec2_ssh_key = "devops-ew"
+#     source_security_group_ids = [module.VPC.private_security_group_id]
+#   }
+# }
 data "aws_eks_node_group" "pokemon" {
   cluster_name    = "pokemon-cluster"
   node_group_name = "pokemon-frontend-nodes"

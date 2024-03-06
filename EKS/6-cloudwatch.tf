@@ -18,11 +18,13 @@ resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
         type   = "metric"
         x      = 0
         y      = 0
-        width  = 12
-        height = 6
+        width  = 24
+        height = 9
 
         properties = {
-          metrics = [
+          sparkline = true
+          view      = "singleValue"
+          metrics   = [
             [
               "AWS/Usage",       # Namespace
               "CallCount",       # Metric name
@@ -34,24 +36,7 @@ resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
               "EKS",             # Dimension value
               "Class",           # Dimension name
               "None",            # Dimension value
-            ]
-          ]
-          period = 60
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "List of EKS Clusters"
-          view   = "singleValue"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-
-        properties = {
-          metrics = [
+            ],
             [
               "AWS/Usage",       # Namespace
               "CallCount",       # Metric name
@@ -63,47 +48,13 @@ resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
               "EKS",             # Dimension value
               "Class",           # Dimension name
               "None",            # Dimension value
-            ]
-          ]
-          period = 60
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "List of EKS Clusters node groups"
-          view   = "singleValue"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-
-        properties = {
-          metrics = [
+            ],
             [
               "AWS/Logs",       # Namespace
               "IncomingBytes",       # Metric name
               "LogGroupName",        # Dimension name
               "/aws/eks/pokemon-cluster/cluster",   
-            ]
-          ]
-          period = 60
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Logs of eks IncomingBytes"
-          view   = "singleValue"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-
-        properties = {
-          metrics = [
+            ],
             [
               "AWS/Logs",       # Namespace
               "IncomingLogEvents",       # Metric name
@@ -111,11 +62,7 @@ resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
               "/aws/eks/pokemon-cluster/cluster",   
             ]
           ]
-          period = 60
-          stat   = "Average"
           region = "us-east-1"
-          title  = "Logs of eks IncomingLogEvents"
-          view   = "singleValue"
         }
       },
     ]

@@ -45,8 +45,8 @@ output "public_security_group_id" {
     value = aws_security_group.public_sg.id
 }
 
-output "rds_postgres_security_group_id" {
-    value = aws_security_group.rds_postgres_sg.id
+output "private_security_group_id" {
+    value = aws_security_group.private_sg.id
 }
 
 output "db_subnet_group_name" {
@@ -57,7 +57,7 @@ output "db_instance_endpoint" {
     value = aws_db_instance.pokemonDatabase.endpoint
 }
 
-output "db_instance_identifier" {
-    value = aws_db_instance.pokemonDatabase.id
+output "db_instance_arn" {
+    value = aws_db_instance.pokemonDatabase.arn
   
 }

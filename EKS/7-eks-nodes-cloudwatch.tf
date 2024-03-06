@@ -119,10 +119,11 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
         type   = "metric"
         x      = 0
         y      = 0
-        width  = 24
-        height = 9
+        width  = 12
+        height = 4
 
         properties = {
+          title    = "CPU Utilization"
           sparkline = true
           metrics   = [
             [
@@ -130,7 +131,22 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
               "CPUUtilization",
               "AutoScalingGroupName",
               "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
-            ],
+            ]
+          ]
+          region = "us-east-1"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 5
+        width  = 12
+        height = 4
+
+        properties = {
+          title    = "CPU Credit Balance"
+          sparkline = true
+          metrics   = [
             [
               "AWS/EC2",
               "CPUCreditBalance",
@@ -144,3 +160,4 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
     ]
   })
 }
+
