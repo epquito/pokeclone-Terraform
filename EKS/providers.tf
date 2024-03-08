@@ -13,7 +13,7 @@ terraform {
 }
 
 module "VPC" {
-  source = "/home/epquito/docker_lessons/kubernetes_lesson/capstone/terraform-pokeclone/VPC"
+  source = var.aws_VPC_path
   # You can provide input variable values if needed
   
 }
