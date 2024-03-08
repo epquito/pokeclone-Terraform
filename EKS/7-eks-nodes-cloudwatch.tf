@@ -1,17 +1,17 @@
 // Create SNS topic for auto scaling groups in eks
 resource "aws_sns_topic" "asg-alarms" {
-  name = "eks-cluster-alarms"
+  name = var.asg_sns_topic_name
 }
 
 // Subscription for SNS topic - sends notifications to the specified email
 resource "aws_sns_topic_subscription" "asg_alarms_email" {
   topic_arn = aws_sns_topic.asg-alarms.arn
   protocol  = "email"
-  endpoint  = "edwinquito45@gmail.com"
+  endpoint  = var.asg_sns_subscription_email
 }
 
 resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
-  dashboard_name = "Node-group-dashboard"
+  dashboard_name = var.asg_cloudwatch_dashboard_name
 
   dashboard_body = jsonencode({
     widgets = [
@@ -87,7 +87,7 @@ resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
               "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
             ]
           ]
-          region = "us-east-1"
+          region = "${var.aws_region}"
         }
       }
     ]
@@ -95,7 +95,7 @@ resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "ASG_CPUUtilization" {
-  alarm_name          = "ASG_CPUUtilization"
+  alarm_name          = var.asg_cloudwatch_alarm_name
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1" // Number of consecutive periods for which the metric condition must be true
   metric_name         = "CPUUtilization"
@@ -111,7 +111,7 @@ resource "aws_cloudwatch_metric_alarm" "ASG_CPUUtilization" {
   }
 }
 resource "aws_cloudwatch_dashboard" "Node-line-graph" {
-  dashboard_name = "Node-line-graph"
+  dashboard_name = var.node_line_graph_dashboard_name
 
   dashboard_body = jsonencode({
     widgets = [
@@ -133,7 +133,7 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
               "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
             ]
           ]
-          region = "us-east-1"
+          region = "${var.aws_region}"
         }
       },
       {
@@ -154,7 +154,7 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
               "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
             ]
           ]
-          region = "us-east-1"
+          region = "${var.aws_region}"
         }
       }
     ]

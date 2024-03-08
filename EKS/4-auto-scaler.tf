@@ -18,11 +18,11 @@ data "aws_iam_policy_document" "pokemon_cluster_autoscaler_assume_role_policy" {
 
 resource "aws_iam_role" "pokemon_cluster_autoscaler" {
   assume_role_policy = data.aws_iam_policy_document.pokemon_cluster_autoscaler_assume_role_policy.json
-  name               = "pokemon-cluster-autoscaler"
+  name               = var.eks_cluster_autoscaler_role_name
 }
 
 resource "aws_iam_policy" "pokemon_cluster_autoscaler" {
-  name = "pokemon-cluster-autoscaler"
+  name = var.eks_cluster_autoscaler_policy_name
 
   policy = jsonencode({
     Statement = [{

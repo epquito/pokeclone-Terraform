@@ -42,24 +42,24 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
 # EKS Node Group for Frontend in Public Subnets
 resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   cluster_name    = aws_eks_cluster.pokemon-cluster.name
-  node_group_name = "pokemon-frontend-nodes"
+  node_group_name = var.eks_node_group_name
   node_role_arn   = aws_iam_role.pokemon-eks-node-group-nodes.arn
 
   subnet_ids = module.VPC.public_subnet_ids
   capacity_type  = "ON_DEMAND"
-  instance_types = ["t2.small"]
+  instance_types = [var.eks_node_group_instance_type]
 
   scaling_config {
-    desired_size = 1
-    max_size     = 2
-    min_size     = 1
+    desired_size = var.eks_node_group_desired_size
+    max_size     = var.eks_node_group_max_size
+    min_size     = var.eks_node_group_min_size
   }
 
   update_config {
     max_unavailable = 1
   }
   tags = {
-    Name = "pokemon-frontend-nodes"
+    Name = var.eks_node_group_name
   }
   labels = {
     role = "frontend"
@@ -73,7 +73,7 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
     aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
   ]
   remote_access {
-    ec2_ssh_key = "devops-ew"
+    ec2_ssh_key = var.eks_node_group_key_name
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
 }
@@ -86,13 +86,13 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
 
 #   subnet_ids = module.VPC.private_subnet_ids
 #   capacity_type  = "ON_DEMAND"
-#   instance_types = ["t2.small"]
+#  instance_types = [var.eks_node_group_instance_type]
 
-#   scaling_config {
-#     desired_size = 1
-#     max_size     = 2
-#     min_size     = 1
-#   }
+#  scaling_config {
+#    desired_size = var.eks_node_group_desired_size
+#    max_size     = var.eks_node_group_max_size
+#    min_size     = var.eks_node_group_min_size
+# }
 
 #   update_config {
 #     max_unavailable = 1
@@ -113,13 +113,13 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
 #     aws_iam_role_policy_attachment.nodes-AmazonSSMManagedInstanceCore,
 #   ]
 #   remote_access {
-#     ec2_ssh_key = "devops-ew"
+#     var.eks_node_group_key_name
 #     source_security_group_ids = [module.VPC.private_security_group_id]
 #   }
 # }
 data "aws_eks_node_group" "pokemon" {
-  cluster_name    = "pokemon-cluster"
-  node_group_name = "pokemon-frontend-nodes"
+  cluster_name    = var.eks_cluster_name
+  node_group_name = var.eks_node_group_name
   depends_on = [ aws_eks_node_group.pokemon-frontend-nodes ]
 }
 output "autoscaling_group_names" {

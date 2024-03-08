@@ -1,6 +1,6 @@
 resource "aws_subnet" "private-subnet-1" {
   vpc_id = aws_vpc.pokemon.id 
-  cidr_block = "10.0.0.0/26"
+  cidr_block = var.private_subnet1_cidr_block
   availability_zone = "us-east-1a"
 
   tags = {
@@ -13,7 +13,7 @@ resource "aws_subnet" "private-subnet-1" {
 
 resource "aws_subnet" "private-subnet-2" {
   vpc_id = aws_vpc.pokemon.id 
-  cidr_block = "10.0.0.64/26"
+  cidr_block = var.private_subnet2_cidr_block
   availability_zone = "us-east-1b"
 
   tags = {
@@ -26,7 +26,7 @@ resource "aws_subnet" "private-subnet-2" {
 
 resource "aws_subnet" "public-subnet-1" {
   vpc_id = aws_vpc.pokemon.id 
-  cidr_block = "10.0.0.128/26"
+  cidr_block = var.public_subnet1_cidr_block
   availability_zone = "us-east-1a"
   map_public_ip_on_launch = true
 
@@ -39,7 +39,7 @@ resource "aws_subnet" "public-subnet-1" {
 }
 resource "aws_subnet" "public-subnet-2" {
   vpc_id = aws_vpc.pokemon.id 
-  cidr_block = "10.0.0.192/26"
+  cidr_block = var.public_subnet2_cidr_block
   availability_zone = "us-east-1b"
   map_public_ip_on_launch = true
 

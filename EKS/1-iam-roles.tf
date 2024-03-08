@@ -1,5 +1,5 @@
 resource "aws_iam_role" "pokemon-demo" {
-  name = "pokemon-eks-cluster"
+  name = var.eks_cluster_role_name
 
   assume_role_policy = <<POLICY
 {
@@ -47,7 +47,7 @@ resource "aws_iam_role_policy_attachment" "pokemon-AmazonEKSClusterPolicy" {
 }
 
 resource "aws_eks_cluster" "pokemon-cluster" {
-  name     = "pokemon-cluster"
+  name     = var.eks_cluster_name
   role_arn = aws_iam_role.pokemon-demo.arn
 
   vpc_config {
@@ -59,6 +59,6 @@ resource "aws_eks_cluster" "pokemon-cluster" {
   depends_on = [aws_iam_role_policy_attachment.pokemon-AmazonEKSClusterPolicy]
 }
 resource "aws_cloudwatch_log_group" "eks_control_plane_logs" {
-  name              = "/aws/eks/pokemon-cluster/control-plane-logs"
+  name              = var.eks_cluster_log_group_name
   retention_in_days = 7
 }

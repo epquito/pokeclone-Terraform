@@ -7,7 +7,7 @@ resource "aws_route_table" "private-route-pokemon" {
   }
 
   tags = {
-    Name = "private-route-pokemon"
+    Name = var.private_route_table_name
   }
 }
 
@@ -20,7 +20,7 @@ resource "aws_route_table" "public-route-pokemon" {
   }
 
   tags = {
-    Name = "public-route-pokemon"
+    Name = var.public_route_table_name
   }
 }
 

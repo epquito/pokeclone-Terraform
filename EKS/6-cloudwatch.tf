@@ -1,16 +1,16 @@
 // Create SNS topic for eks-cluster-alarms
 resource "aws_sns_topic" "eks-cluster-alarms" {
-  name = "eks-cluster-alarms"
+  name = var.sns_topic_name
 }
 
 // Subscription for SNS topic - sends notifications to the specified email
 resource "aws_sns_topic_subscription" "eks_cluster_alarms_email" {
   topic_arn = aws_sns_topic.eks-cluster-alarms.arn
   protocol  = "email"
-  endpoint  = "edwinquito45@gmail.com"
+  endpoint  = var.sns_subscription_email
 }
 resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
-  dashboard_name = "EKS-CLuster-Terraform-Pokeclone"
+  dashboard_name = var.cloudwatch_dashboard_name
 
   dashboard_body = jsonencode({
     widgets = [
@@ -62,9 +62,31 @@ resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
               "/aws/eks/pokemon-cluster/cluster",   
             ]
           ]
-          region = "us-east-1"
+          region = "${var.aws_region}"
         }
       },
     ]
   })
+}
+
+resource "aws_cloudwatch_metric_alarm" "eks_cluster_alarm" {
+  alarm_name          = var.cloudwatch_alarm_name
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CallCount"
+  namespace           = "AWS/Usage"
+  period              = 60  # Set the appropriate period in seconds
+  statistic           = "Sum"
+  threshold           = 1  # Set the appropriate threshold value
+  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
+
+  dimensions = {
+    Type      = "API"
+    Resource  = "ListClusters"
+    Service   = "EKS"
+    Class     = "None"
+  }
+
+  alarm_description = "Alarm for EKS Cluster API Call Count"
+
 }

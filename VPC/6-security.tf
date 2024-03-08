@@ -1,5 +1,5 @@
 resource "aws_security_group" "public_sg" {
-    name        = "public-sg"
+    name        = var.public_security_group_name
     description = "Public Security Group"
     vpc_id      = aws_vpc.pokemon.id  # Replace with your VPC ID
 
@@ -18,12 +18,12 @@ resource "aws_security_group" "public_sg" {
     }
 
     tags = {
-        Name = "public-sg"
+        Name = var.public_security_group_name
     }
 }
 
 resource "aws_security_group" "private_sg" {
-    name        = "private_sg"
+    name        = var.private_security_group_name
     description = "Security Group for private_sg"
     vpc_id      = aws_vpc.pokemon.id  # Replace with your VPC ID
 
@@ -41,6 +41,6 @@ resource "aws_security_group" "private_sg" {
     }
 
     tags = {
-        Name = "private_sg"
+        Name = var.private_security_group_name
     }
 }

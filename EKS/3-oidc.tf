@@ -18,11 +18,11 @@ data "aws_iam_policy_document" "pokemon_oidc_assume_role_policy" {
 
 resource "aws_iam_role" "pokemon_oidc" {
   assume_role_policy = data.aws_iam_policy_document.pokemon_oidc_assume_role_policy.json
-  name               = "pokemon-oidc"
+  name               = var.eks_oidc_role_name
 }
 
 resource "aws_iam_policy" "pokemon-policy" {
-  name = "pokemon-policy"
+  name = var.eks_oidc_policy_name
 
   policy = jsonencode({
     Statement = [{

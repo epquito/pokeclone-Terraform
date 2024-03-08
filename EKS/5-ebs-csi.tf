@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "pokemon-ebs-csi" {
 
 resource "aws_iam_role" "eks_ebs_csi_driver" {
   assume_role_policy = data.aws_iam_policy_document.pokemon-ebs-csi.json
-  name               = "eks-ebs-csi-driver"
+  name               = var.eks_csi_driver_role_name
 }
 
 resource "aws_iam_role_policy_attachment" "amazon_ebs_csi_driver" {
