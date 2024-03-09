@@ -24,15 +24,15 @@ This project provides a comprehensive Terraform configuration designed for deplo
 Create a file named ```provider.tf``` and input the following configuration to specify the AWS provider and required version.
 ```
 provider "aws" {
-  region  = "us-east-1"
-  profile = "east1-user"
+    region = var.region
+    profile = var.profile
+  
 }
-
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
+        source = "hashicorp/aws"
+        version = "~> 4.16"
     }
   }
 }
@@ -43,41 +43,44 @@ Create a file named ```vpc.tf``` and add the following code to define a VPC name
 
 ```
 resource "aws_vpc" "pokemon" {
-  cidr_block           = "10.0.0.0/24"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-  tags = {
-    Name = "pokemon"
-  }
+
+    cidr_block = var.vpc_cidr_block
+    enable_dns_support = true
+    enable_dns_hostnames = true
+    tags = {
+      Name = "pokemon"
+    }
 }
 
 ### Step 3: Internet Gateway
 Create a file named igw.tf and configure an Internet Gateway for your VPC.
 ```resource "aws_internet_gateway" "pokemon-igw" {
-  vpc_id = aws_vpc.pokemon.id
-  tags = {
-    Name = "pokemon-igw"
-  }
+    vpc_id = aws_vpc.pokemon.id
+    tags = {
+      Name = var.internet_gateway_name
+    }
 }
+
 ```
 
 ### Step 4: NAT Gateway and EIP
 Create a file named nat-gw.tf. Define an Elastic IP (EIP) and a NAT Gateway to allow outbound internet access for instances in private subnets.
 ```resource "aws_eip" "pokemon-nat" {
-  vpc = true
+    vpc = true
+    tags = {
+      Name = var.nat_gateway_eip_name
+    }
+  
+}
+resource "aws_nat_gateway" "pokemon-nat-gw" {
+  allocation_id = aws_eip.pokemon-nat.id 
+  subnet_id     = aws_subnet.public-subnet-1.id  # Corrected subnet reference
   tags = {
-    Name = "pokemon-nat"
+    Name = var.nat_gateway_name
   }
+  depends_on = [aws_internet_gateway.pokemon-igw]  # Corrected dependency reference
 }
 
-resource "aws_nat_gateway" "pokemon-nat-gw" {
-  allocation_id = aws_eip.pokemon-nat.id
-  subnet_id     = aws_subnet.public-subnet-1.id # This will be defined in your subnet configuration
-  tags = {
-    Name = "pokemon-nat-gw"
-  }
-  depends_on = [aws_internet_gateway.pokemon-igw]
-}
 ```
 
 ### Step 5: Security Groups
@@ -86,37 +89,17 @@ Create a file named security.tf. This file defines two security groups: one for 
 - Public Security Group allows inbound traffic on ports 22 (SSH), 80 (HTTP), 8000, and 5432 (PostgreSQL), along with unrestricted outbound traffic.
 - RDS PostgreSQL Security Group allows inbound traffic on port 5432 (PostgreSQL) and unrestricted outbound traffic.
 ```resource "aws_security_group" "public_sg" {
-    name        = "public-sg"
+    name        = var.public_security_group_name
     description = "Public Security Group"
     vpc_id      = aws_vpc.pokemon.id  # Replace with your VPC ID
 
     ingress {
-        from_port   = 22
-        to_port     = 22
-        protocol    = "tcp"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
         cidr_blocks = ["0.0.0.0/0"]
     }
 
-    ingress {
-        from_port   = 80
-        to_port     = 80
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    ingress {
-        from_port   = 8000
-        to_port     = 8000
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    ingress {
-        from_port   = 5432
-        to_port     = 5432
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
     egress {
         from_port   = 0
         to_port     = 0
@@ -125,26 +108,19 @@ Create a file named security.tf. This file defines two security groups: one for 
     }
 
     tags = {
-        Name = "public-sg"
+        Name = var.public_security_group_name
     }
 }
 
-resource "aws_security_group" "rds_postgres_sg" {
-    name        = "rds-postgres-sg"
-    description = "Security Group for RDS PostgreSQL"
+resource "aws_security_group" "private_sg" {
+    name        = var.private_security_group_name
+    description = "Security Group for private_sg"
     vpc_id      = aws_vpc.pokemon.id  # Replace with your VPC ID
 
     ingress {
-        from_port   = 5432
-        to_port     = 5432
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-  
-    ingress {
-        from_port   = 22
-        to_port     = 22
-        protocol    = "tcp"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
         cidr_blocks = ["0.0.0.0/0"]
     }
     egress {
@@ -155,37 +131,44 @@ resource "aws_security_group" "rds_postgres_sg" {
     }
 
     tags = {
-        Name = "rds-postgres-sg"
+        Name = var.private_security_group_name
     }
 }
 ```
   
 ### Step 6: RDS Database
 Create a file named rds.tf. This file creates an RDS instance for a PostgreSQL database within the VPC.
-```resource "aws_db_subnet_group" "db-subnet-group" {
-  name       = "db-subnet-group"
+```# Create a DB subnet group
+resource "aws_db_subnet_group" "db-subnet-group" {
+  name       = var.db_subnet_group_name
   subnet_ids = [
     aws_subnet.public-subnet-1.id,
     aws_subnet.public-subnet-2.id,
   ]
 }
 
+# Create an RDS instance
 resource "aws_db_instance" "pokemonDatabase" {
   allocated_storage      = 20
-  identifier             = "pokeclone-db"
-  db_name                = "pokeclone_db"
+  identifier             = var.db_instance_identifier
+  db_name                = var.db_name
   engine                 = "postgres"
   engine_version         = "12.17"
   instance_class         = "db.t2.micro"
-  username               = "postgres"
-  password               = "postgres"
+  username               = var.db_username
+  password               = var.db_password
   parameter_group_name   = "default.postgres12"
   publicly_accessible    = true
   skip_final_snapshot    = true
   deletion_protection    = false
-  vpc_security_group_ids = [aws_security_group.rds_postgres_sg.id]
+  vpc_security_group_ids = [aws_security_group.public_sg.id]
 
   db_subnet_group_name   = aws_db_subnet_group.db-subnet-group.name
+  iam_database_authentication_enabled = true
+
+  performance_insights_enabled          = true
+  performance_insights_retention_period = 7
+  backup_retention_period = 1
 }
 ```
 
@@ -257,8 +240,8 @@ output "db_instance_endpoint" {
 ### Step 1: Provider Configuration
 Sets up the Terraform provider for AWS. It specifies the AWS region and the profile to use for authentication.
 ```provider "aws" {
-  region = "us-east-1"
-  profile = "east1-user"
+  region = var.aws_region
+  profile = var.aws_profile
 }
 ```
 
@@ -289,7 +272,7 @@ Defines IAM roles and policies needed for the EKS cluster and worker nodes to op
 - **aws_iam_role_policy_attachment** resources attach policies to roles.
 
 ```resource "aws_iam_role" "pokemon-demo" {
-  name = "pokemon-eks-cluster"
+  name = var.eks_cluster_role_name
 
   assume_role_policy = <<POLICY
 {
@@ -339,7 +322,7 @@ resource "aws_iam_role_policy_attachment" "pokemon-AmazonEKSClusterPolicy" {
 Creates an EKS cluster named **pokemon-cluster**, specifying its configuration, including the VPC setup through the module and the IAM role for the control plane.
 ```
 resource "aws_eks_cluster" "pokemon-cluster" {
-  name     = "pokemon-cluster"
+  name     = var.eks_cluster_name
   role_arn = aws_iam_role.pokemon-demo.arn
 
   vpc_config {
@@ -351,14 +334,15 @@ resource "aws_eks_cluster" "pokemon-cluster" {
   depends_on = [aws_iam_role_policy_attachment.pokemon-AmazonEKSClusterPolicy]
 }
 resource "aws_cloudwatch_log_group" "eks_control_plane_logs" {
-  name              = "/aws/eks/pokemon-cluster/control-plane-logs"
+  name              = var.eks_cluster_log_group_name
   retention_in_days = 7
 }
 ```
 ### Step 3: Worker Nodes
 Sets up worker node groups for the EKS cluster, defining their configurations such as instance types, scaling options, and IAM roles.
 
-```# IAM Role for EKS Nodes
+```
+# IAM Role for EKS Nodes
 resource "aws_iam_role" "pokemon-eks-node-group-nodes" {
   name = "pokemon-eks-node-group-nodes"
 
@@ -393,38 +377,38 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
 }
-
 # EKS Node Group for Frontend in Public Subnets
 resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   cluster_name    = aws_eks_cluster.pokemon-cluster.name
-  node_group_name = "pokemon-frontend-nodes"
+  node_group_name = var.eks_node_group_name
   node_role_arn   = aws_iam_role.pokemon-eks-node-group-nodes.arn
 
   subnet_ids = module.VPC.public_subnet_ids
   capacity_type  = "ON_DEMAND"
-  instance_types = ["t2.small"]
+  instance_types = [var.eks_node_group_instance_type]
 
   scaling_config {
-    desired_size = 1
-    max_size     = 1
-    min_size     = 1
+    desired_size = var.eks_node_group_desired_size
+    max_size     = var.eks_node_group_max_size
+    min_size     = var.eks_node_group_min_size
   }
 
   update_config {
     max_unavailable = 1
   }
-
+  tags = {
+    Name = var.eks_node_group_name
+  }
   labels = {
     role = "frontend"
   }
-
   depends_on = [
     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.nodes-AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
   ]
   remote_access {
-    ec2_ssh_key = "devops-ew"
+    ec2_ssh_key = var.eks_node_group_key_name
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
 }
@@ -574,10 +558,9 @@ Configures the IAM role and policy for the EBS CSI driver, enabling Kubernetes p
     }
   }
 }
-
 resource "aws_iam_role" "eks_ebs_csi_driver" {
   assume_role_policy = data.aws_iam_policy_document.pokemon-ebs-csi.json
-  name               = "eks-ebs-csi-driver"
+  name               = var.eks_csi_driver_role_name
 }
 
 resource "aws_iam_role_policy_attachment" "amazon_ebs_csi_driver" {
@@ -602,89 +585,19 @@ resource "aws_sns_topic" "eks-cluster-alarms" {
 }
 
 // Subscription for SNS topic - sends notifications to the specified email
+// Create SNS topic for eks-cluster-alarms
+resource "aws_sns_topic" "eks-cluster-alarms" {
+  name = var.sns_topic_name
+}
+
+// Subscription for SNS topic - sends notifications to the specified email
 resource "aws_sns_topic_subscription" "eks_cluster_alarms_email" {
   topic_arn = aws_sns_topic.eks-cluster-alarms.arn
   protocol  = "email"
-  endpoint  = "edwinquito45@gmail.com"
+  endpoint  = var.sns_subscription_email
 }
-
-// Metric alarm for cluster list
-resource "aws_cloudwatch_metric_alarm" "Cluster_list" {
-  alarm_name          = "ListCluster"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CallCount"
-  namespace           = "AWS/Usage"
-  period              = "60"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered after more than 1 cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name = aws_eks_cluster.pokemon-cluster.name
-  }
-}
-
-// Metric alarm for cluster node groups
-resource "aws_cloudwatch_metric_alarm" "Cluster_Node_groups" {
-  alarm_name          = "Cluster_Node_Groups"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CallCount"
-  namespace           = "AWS/EKS"
-  period              = "60"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered after more than 1 Node Group"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    node_group_name = "pokemon-frontend-nodes"
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "Cluster_Logs_Events" {
-  alarm_name          = "Cluster_Logs_Events"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "IncomingLogEvents"
-  namespace           = "AWS/Logs"
-  period              = "30"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered from log events within cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    log_group_name = "/aws/eks/pokemon-cluster/control-plane-logs"
-    
-  }
-}
-resource "aws_cloudwatch_metric_alarm" "Cluster_Incoming_bytes" {
-  alarm_name          = "Cluster_Incoming_bytes"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "IncomingBytes"
-  namespace           = "AWS/Logs"
-  period              = "30"
-  statistic           = "Sum"
-  threshold           = "0"
-  alarm_description   = "Alarm triggered from incoming bytes within cluster"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
-  dimensions = {
-    cluster_name     = aws_eks_cluster.pokemon-cluster.name
-    log_group_name = "/aws/eks/pokemon-cluster/control-plane-logs"
-    
-  }
-}
-
-// CloudWatch dashboard for EKS Cluster metrics
-resource "aws_cloudwatch_dashboard" "EKS_Cluster_metrics" {
-  dashboard_name = "EKS-Metrics"
+resource "aws_cloudwatch_dashboard" "EKS-CLuster-Terraform-Pokeclone" {
+  dashboard_name = var.cloudwatch_dashboard_name
 
   dashboard_body = jsonencode({
     widgets = [
@@ -692,104 +605,81 @@ resource "aws_cloudwatch_dashboard" "EKS_Cluster_metrics" {
         type   = "metric"
         x      = 0
         y      = 0
-        width  = 6
-        height = 6
+        width  = 24
+        height = 9
 
         properties = {
-          metrics = [
+          sparkline = true
+          view      = "singleValue"
+          metrics   = [
             [
-              "AWS/Usage",
-              "CallCount",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
+              "AWS/Usage",       # Namespace
+              "CallCount",       # Metric name
+              "Type",            # Dimension name
+              "API",             # Dimension value
+              "Resource",        # Dimension name
+              "ListClusters",    # Dimension value
+              "Service",         # Dimension name
+              "EKS",             # Dimension value
+              "Class",           # Dimension name
+              "None",            # Dimension value
             ],
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Usage - CallCount"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 0
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
             [
-              "AWS/EKS",
-              "CallCount",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
+              "AWS/Usage",       # Namespace
+              "CallCount",       # Metric name
+              "Type",            # Dimension name
+              "API",             # Dimension value
+              "Resource",        # Dimension name
+              "ListNodegroups",    # Dimension value
+              "Service",         # Dimension name
+              "EKS",             # Dimension value
+              "Class",           # Dimension name
+              "None",            # Dimension value
             ],
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "EKS - CallCount"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 6
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
             [
-              "AWS/Logs",
-              "IncomingLogEvents",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
+              "AWS/Logs",       # Namespace
+              "IncomingBytes",       # Metric name
+              "LogGroupName",        # Dimension name
+              "/aws/eks/pokemon-cluster/cluster",   
             ],
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Logs - IncomingLogEvents"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 6
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
             [
-              "AWS/Logs",
-              "IncomingBytes",
-              "cluster_name",
-              "${aws_eks_cluster.pokemon-cluster.name}"
-            ],
+              "AWS/Logs",       # Namespace
+              "IncomingLogEvents",       # Metric name
+              "LogGroupName",        # Dimension name
+              "/aws/eks/pokemon-cluster/cluster",   
+            ]
           ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Logs - IncomingBytes"
-        }
-      },
-      {
-        type   = "text"
-        x      = 0
-        y      = 12
-        width  = 3
-        height = 3
-
-        properties = {
-          markdown = "Pokemon cluster"
+          region = "${var.aws_region}"
         }
       },
     ]
   })
 }
+
+resource "aws_cloudwatch_metric_alarm" "eks_cluster_alarm" {
+  alarm_name          = var.cloudwatch_alarm_name
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CallCount"
+  namespace           = "AWS/Usage"
+  period              = 60  # Set the appropriate period in seconds
+  statistic           = "Sum"
+  threshold           = 1  # Set the appropriate threshold value
+  alarm_actions       = [aws_sns_topic.eks-cluster-alarms.arn]
+
+  dimensions = {
+    Type      = "API"
+    Resource  = "ListClusters"
+    Service   = "EKS"
+    Class     = "None"
+  }
+
+  alarm_description = "Alarm for EKS Cluster API Call Count"
+
+}
+
+// CloudWatch dashboard for EKS Cluster metrics
+
 ```
 
 ### Step 8: EKS node cloudwatch:
@@ -797,205 +687,118 @@ create a comprehensive monitoring and notification system for Amazon Elastic Kub
 
 ```// Create SNS topic for auto scaling groups in eks
 resource "aws_sns_topic" "asg-alarms" {
-  name = "eks-cluster-alarms"
+  name = var.asg_sns_topic_name
 }
 
 // Subscription for SNS topic - sends notifications to the specified email
 resource "aws_sns_topic_subscription" "asg_alarms_email" {
   topic_arn = aws_sns_topic.asg-alarms.arn
   protocol  = "email"
-  endpoint  = "edwinquito45@gmail.com"
+  endpoint  = var.asg_sns_subscription_email
 }
 
-// Metric alarm for ASG CPUUTILIZATION
+
+resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
+  dashboard_name = var.asg_cloudwatch_dashboard_name
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 24
+        height = 9
+
+        properties = {
+          sparkline = true
+          view      = "singleValue"
+          metrics   = [
+            [
+              "AWS/EC2",
+              "CPUUtilization",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "DiskReadOps",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "NetworkPacketsOut",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "DiskWriteBytes",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "StatusCheckFailed_Instance",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "DiskWriteOps",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "NetworkOut",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "DiskReadBytes",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "NetworkPacketsIn",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ],
+            [
+              "AWS/EC2",
+              "NetworkIn",
+              "AutoScalingGroupName",
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
+            ]
+          ]
+          region = "${var.aws_region}"
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_cloudwatch_metric_alarm" "ASG_CPUUtilization" {
-  alarm_name          = "ASG_CPUUtilization"
+  alarm_name          = var.asg_cloudwatch_alarm_name
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
+  evaluation_periods  = "1" // Number of consecutive periods for which the metric condition must be true
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after CPUUtilization is over or at 25 percent"
+  period              = "60"      // in seconds
+  statistic           = "Average" // metric aggregation type
+  threshold           = "25"      // threshold for triggering the alarm (75% CPU utilization)
+  alarm_description   = "This alarm monitors ASG CPU utilization"
   actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
+  alarm_actions       = [aws_sns_topic.asg-alarms.arn] // Action to trigger SNS notification
   dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
+    AutoScalingGroupName = "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
   }
 }
-
-// Metric alarm for ASG CPUUTILIZATION
-resource "aws_cloudwatch_metric_alarm" "ASG_DiskReadOps" {
-  alarm_name          = "ASG_DiskReadOps"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DiskReadOps"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after DiskReadOps is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-// Metric alarm for ASG CPUUTILIZATION
-resource "aws_cloudwatch_metric_alarm" "ASG_NetworkPacketsOut" {
-  alarm_name          = "ASG_NetworkPacketsOut"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "NetworkPacketsOut"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after NetworkPacketsOut is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-resource "aws_cloudwatch_metric_alarm" "ASG_DiskWriteBytes" {
-  alarm_name          = "ASG_DiskWriteBytes"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DiskWriteBytes"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after DiskWriteBytes is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-resource "aws_cloudwatch_metric_alarm" "ASG_StatusCheckFailed_Instance" {
-  alarm_name          = "ASG_StatusCheckFailed_Instance"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "StatusCheckFailed_Instance"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after StatusCheckFailed_Instance is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ASG_DiskWriteOps" {
-  alarm_name          = "ASG_DiskWriteOps"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DiskWriteOps"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after DiskWriteOps is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ASG_NetworkOut" {
-  alarm_name          = "ASG_NetworkOut"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "NetworkOut"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "25"
-  alarm_description   = "Alarm triggered after NetworkOut is over or at 25 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ASG_DiskReadBytes" {
-  alarm_name          = "ASG_DiskReadBytes"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DiskReadBytes"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "20"
-  alarm_description   = "Alarm triggered after DiskReadBytes is over or at 20 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ASG_NetworkPacketsIn" {
-  alarm_name          = "ASG_NetworkPacketsIn"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "NetworkPacketsIn"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "20"
-  alarm_description   = "Alarm triggered after NetworkPacketsIn is over or at 20 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ASG_NetworkIn" {
-  alarm_name          = "ASG_NetworkIn"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "NetworkIn"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "20"
-  alarm_description   = "Alarm triggered after NetworkIn is over or at 20 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-resource "aws_cloudwatch_metric_alarm" "ASG_CPUCreditBalance" {
-  alarm_name          = "ASG_CPUCreditBalance"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "CPUCreditBalance"
-  namespace           = "AWS/EC2"
-  period              = "30"
-  statistic           = "Average"
-  threshold           = "20"
-  alarm_description   = "Alarm triggered after CPUCreditBalance is over or at 20 percent"
-  actions_enabled     = true
-  alarm_actions       = [aws_sns_topic.asg-alarms.arn]
-  dimensions = {
-    AutoScalingGroupName = aws_eks_node_group.pokemon-frontend-nodes.node_group_name
-  }
-}
-// CloudWatch dashboard for Node Group metrics
-resource "aws_cloudwatch_dashboard" "Node_group_metrics" {
-  dashboard_name = "Node-group-Metrics"
+resource "aws_cloudwatch_dashboard" "Node-line-graph" {
+  dashboard_name = var.node_line_graph_dashboard_name
 
   dashboard_body = jsonencode({
     widgets = [
@@ -1003,225 +806,48 @@ resource "aws_cloudwatch_dashboard" "Node_group_metrics" {
         type   = "metric"
         x      = 0
         y      = 0
-        width  = 6
-        height = 6
+        width  = 12
+        height = 4
 
         properties = {
-          metrics = [
+          title    = "CPU Utilization"
+          sparkline = true
+          metrics   = [
             [
               "AWS/EC2",
               "CPUUtilization",
               "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
             ]
           ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "CPU Utilization"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 0
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "DiskReadOps",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Disk Read Ops"
+          region = "${var.aws_region}"
         }
       },
       {
         type   = "metric"
         x      = 0
-        y      = 6
-        width  = 6
-        height = 6
+        y      = 5
+        width  = 12
+        height = 4
 
         properties = {
-          metrics = [
+          title    = "CPU Credit Balance"
+          sparkline = true
+          metrics   = [
             [
               "AWS/EC2",
-              "NetworkPacketsOut",
+              "CPUCreditBalance",
               "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
+              "${data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups[0].name}"
             ]
           ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Network Packets Out"
+          region = "${var.aws_region}"
         }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 6
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "DiskWriteBytes",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Disk Write Bytes"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 12
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "StatusCheckFailed_Instance",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Status Check Failed"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 12
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "DiskWriteOps",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Disk Write Ops"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 18
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "NetworkOut",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Network Out"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 18
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "DiskReadBytes",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Disk Read Bytes"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 0
-        y      = 24
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "NetworkPacketsIn",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Network Packets In"
-        }
-      },
-      {
-        type   = "metric"
-        x      = 6
-        y      = 24
-        width  = 6
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "NetworkIn",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ]
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "Network In"
-        }
-      },
+      }
     ]
   })
 }
+
 
 // CloudWatch dashboard for Node Group metrics
 resource "aws_cloudwatch_dashboard" "Node_group_line_metric" {

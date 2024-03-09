@@ -33,12 +33,6 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
 }
-# resource "aws_iam_role_policy_attachment" "nodes-AmazonSSMManagedInstanceCore" {
-#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonSSMManagedInstanceCore"
-#   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
-# }
-
-
 # EKS Node Group for Frontend in Public Subnets
 resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   cluster_name    = aws_eks_cluster.pokemon-cluster.name
@@ -64,9 +58,6 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   labels = {
     role = "frontend"
   }
-
-
-
   depends_on = [
     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.nodes-AmazonEKS_CNI_Policy,
@@ -77,6 +68,10 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
 }
+# resource "aws_iam_role_policy_attachment" "nodes-AmazonSSMManagedInstanceCore" {
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonSSMManagedInstanceCore"
+#   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
+# }
 
 # # EKS Node Group for Frontend in Public Subnets
 # resource "aws_eks_node_group" "pokemon-backend-nodes" {

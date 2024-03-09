@@ -12,7 +12,6 @@ resource "aws_sns_topic_subscription" "asg_alarms_email" {
 
 resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
   dashboard_name = var.asg_cloudwatch_dashboard_name
-
   dashboard_body = jsonencode({
     widgets = [
       {
