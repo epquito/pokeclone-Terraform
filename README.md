@@ -1,24 +1,332 @@
 # Pokemon Terraform Configuration for Amazon EKS
+The diagram illustrates a comprehensive AWS infrastructure deployment tailored for full-scale production. However, our current focus is solely on the public-facing aspect of the deployment. Nonetheless, it's worth noting that the groundwork has been established to seamlessly transition into a complete public/private EKS deployment when needed.
 
   ![Alt Text](https://github.com/epquito/pokeclone-Terraform/blob/master/AWS-Terraform-Architecture-Structure.jpeg)
 
 ## Introduction
 This project provides a comprehensive Terraform configuration designed for deploying a highly available and scalable Amazon Elastic Kubernetes Service (EKS) environment. It includes setups for a VPC, subnets, Internet Gateway (IGW), NAT Gateway, route tables, and an Amazon RDS instance, ensuring a robust infrastructure for containerized applications.
 
-## Project Structure
-
-- vpc.tf: Sets up the AWS VPC.
-- subnets.tf: Defines public and private subnets.
-- igw.tf: Creates the Internet Gateway.
-- nat_gateway.tf: Provisions the NAT Gateway.
-- route_tables.tf: Configures routing for the VPC.
-- eks_cluster.tf: Deploys the EKS cluster.
-- rds.tf: Provisions an RDS instance.
-  
 ## Table of Contents
 
 - [Steps for VPC](#steps-for-vpc)
 - [Steps for EKS](#steps-for-eks)
+
+## Change the variables default attribute to the value you want or need
+## Variables tf for VPC:
+```
+variable "region" {
+  description = "AWS region where resources will be created"
+  type        = string
+  default     = ""  # Change this to your desired AWS region
+}
+
+variable "profile" {
+  description = "AWS CLI profile name to be used by Terraform"
+  type        = string
+  default     = ""  # Change this to your AWS CLI profile
+}
+
+# VPC
+variable "vpc_cidr_block" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = ""
+}
+
+# Subnets
+variable "private_subnet1_cidr_block" {
+  description = "CIDR block for private subnet 1"
+  type        = string
+  default     = ""
+}
+
+variable "private_subnet2_cidr_block" {
+  description = "CIDR block for private subnet 2"
+  type        = string
+  default     = ""
+}
+
+variable "public_subnet1_cidr_block" {
+  description = "CIDR block for public subnet 1"
+  type        = string
+  default     = ""
+}
+
+variable "public_subnet2_cidr_block" {
+  description = "CIDR block for public subnet 2"
+  type        = string
+  default     = ""
+}
+
+# Internet Gateway
+variable "internet_gateway_name" {
+  description = "Name of the Internet Gateway"
+  type        = string
+  default     = ""
+}
+
+# Elastic IP
+variable "nat_gateway_eip_name" {
+  description = "Name of the Elastic IP for NAT Gateway"
+  type        = string
+  default     = ""
+}
+
+# NAT Gateway
+variable "nat_gateway_name" {
+  description = "Name of the NAT Gateway"
+  type        = string
+  default     = ""
+}
+
+# Route Tables
+variable "private_route_table_name" {
+  description = "Name of the private route table"
+  type        = string
+  default     = ""
+}
+
+variable "public_route_table_name" {
+  description = "Name of the public route table"
+  type        = string
+  default     = ""
+}
+
+# Security Groups
+variable "public_security_group_name" {
+  description = "Name of the public security group"
+  type        = string
+  default     = ""
+}
+
+variable "private_security_group_name" {
+  description = "Name of the private security group"
+  type        = string
+  default     = ""
+}
+
+# RDS
+variable "db_subnet_group_name" {
+  description = "Name of the RDS DB subnet group"
+  type        = string
+  default     = ""
+}
+
+variable "db_instance_identifier" {
+  description = "Identifier for the RDS instance"
+  type        = string
+  default     = ""
+}
+
+variable "db_name" {
+  description = "Name of the RDS database"
+  type        = string
+  default     = ""
+}
+
+variable "db_username" {
+  description = "Username for the RDS instance"
+  type        = string
+  default     = ""
+}
+
+variable "db_password" {
+  description = "Password for the RDS instance"
+  type        = string
+  default     = ""
+}
+
+# SNS Topic
+variable "sns_topic_name" {
+  description = "Name of the SNS Topic"
+  type        = string
+  default     = ""
+}
+
+variable "sns_topic_email" {
+  description = "Email address for SNS topic subscription"
+  type        = string
+  default     = ""
+}
+
+# IAM Role for EventBridge
+variable "iam_role_name" {
+  description = "Name of the IAM role for EventBridge"
+  type        = string
+  default     = ""
+}
+
+# CloudWatch Events Rule
+variable "cloudwatch_event_rule_name" {
+  description = "Name of the CloudWatch Events rule"
+  type        = string
+  default     = ""
+}
+
+```
+## Variables tf for EKS:
+```
+variable "aws_region" {
+  description = "The AWS region to deploy resources"
+  type        = string
+  default     = ""  # Update with your desired default region
+}
+variable "aws_VPC_path" {
+  description = "The AWS region to deploy resources"
+  type        = string
+  default     = ""  
+}
+
+variable "aws_profile" {
+  description = "The AWS CLI named profile to use for authentication"
+  type        = string
+  default     = ""  # Update with your AWS CLI profile
+}
+
+variable "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  type        = string
+  default     = ""
+}
+
+variable "eks_cluster_role_name" {
+  description = "Name of the IAM role for EKS cluster"
+  type        = string
+  default     = ""
+}
+
+variable "eks_cluster_log_group_name" {
+  description = "Name of the CloudWatch Log Group for EKS cluster"
+  type        = string
+  default     = ""
+}
+
+variable "eks_node_group_name" {
+  description = "Name of the EKS node group"
+  type        = string
+  default     = ""
+}
+
+variable "eks_node_group_instance_type" {
+  description = "Instance type for EKS node group"
+  type        = string
+  default     = ""
+}
+
+variable "eks_node_group_desired_size" {
+  description = "Desired number of instances in EKS node group"
+  type        = number
+  default     = 
+}
+
+variable "eks_node_group_max_size" {
+  description = "Maximum number of instances in EKS node group"
+  type        = number
+  default     = 
+}
+
+variable "eks_node_group_min_size" {
+  description = "Minimum number of instances in EKS node group"
+  type        = number
+  default     = 
+}
+
+variable "eks_node_group_key_name" {
+  description = "SSH key name for EKS node group instances"
+  type        = string
+  default     = ""
+}
+
+variable "eks_cluster_autoscaler_role_name" {
+  description = "Name of the IAM role for EKS cluster autoscaler"
+  type        = string
+  default     = ""
+}
+variable "eks_cluster_autoscaler_policy_name" {
+  description = "Name of the IAM policy for EKS cluster autoscaler"
+  type        = string
+  default     = ""
+}
+
+variable "eks_csi_driver_role_name" {
+  description = "Name of the IAM role for EBS CSI driver"
+  type        = string
+  default     = ""
+}
+
+variable "eks_oidc_role_name" {
+  description = "Name of the IAM role for EKS OIDC"
+  type        = string
+  default     = ""
+}
+
+variable "eks_oidc_policy_name" {
+  description = "Name of the IAM policy for EKS OIDC"
+  type        = string
+  default     = ""
+}
+
+variable "sns_topic_name" {
+  description = "Name of the SNS topic for eks-cluster-alarms"
+  type        = string
+  default     = ""
+}
+
+variable "sns_subscription_email" {
+  description = "Email address for SNS topic subscription"
+  type        = string
+  default     = ""
+}
+
+variable "cloudwatch_dashboard_name" {
+  description = "Name of the CloudWatch dashboard"
+  type        = string
+  default     = ""
+}
+
+variable "cloudwatch_alarm_name" {
+  description = "Name of the CloudWatch alarm for eks-cluster"
+  type        = string
+  default     = ""
+}
+// Variables
+variable "asg_sns_topic_name" {
+  description = "Name of the SNS topic for auto scaling groups in eks"
+  type        = string
+  default     = ""
+}
+
+variable "asg_sns_subscription_email" {
+  description = "Email address for SNS topic subscription for auto scaling groups"
+  type        = string
+  default     = ""
+}
+
+variable "asg_cloudwatch_dashboard_name" {
+  description = "Name of the CloudWatch dashboard for auto scaling groups"
+  type        = string
+  default     = ""
+}
+
+variable "asg_cloudwatch_alarm_name" {
+  description = "Name of the CloudWatch alarm for ASG CPU Utilization"
+  type        = string
+  default     = ""
+}
+
+variable "asg_cloudwatch_alarm_threshold" {
+  description = "Threshold value for the CloudWatch alarm for ASG CPU Utilization"
+  type        = number
+  default     = 
+}
+
+variable "node_line_graph_dashboard_name" {
+  description = "Name of the CloudWatch dashboard for node line graph"
+  type        = string
+  default     = ""
+}
+
+```
 
 ## Steps for VPC
 
@@ -53,6 +361,7 @@ resource "aws_vpc" "pokemon" {
       Name = "pokemon"
     }
 }
+```
 
 ### Step 3: Internet Gateway
 Create a file named igw.tf and configure an Internet Gateway for your VPC.
@@ -84,8 +393,114 @@ resource "aws_nat_gateway" "pokemon-nat-gw" {
 }
 
 ```
+### Step 5 Creating Subnets 
+```
+resource "aws_subnet" "private-subnet-1" {
+  vpc_id = aws_vpc.pokemon.id 
+  cidr_block = var.private_subnet1_cidr_block
+  availability_zone = "us-east-1a"
 
-### Step 5: Security Groups
+  tags = {
+    "Name" = "private-subnet-1"
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/pokemon-cluster" = "owned"
+
+  }
+}
+
+resource "aws_subnet" "private-subnet-2" {
+  vpc_id = aws_vpc.pokemon.id 
+  cidr_block = var.private_subnet2_cidr_block
+  availability_zone = "us-east-1b"
+
+  tags = {
+    "Name" = "private-subnet-2"
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/pokemon-cluster" = "owned"
+
+  }
+}
+
+resource "aws_subnet" "public-subnet-1" {
+  vpc_id = aws_vpc.pokemon.id 
+  cidr_block = var.public_subnet1_cidr_block
+  availability_zone = "us-east-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    "Name" = "public-subnet-1"
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/pokemon-cluster" = "owned"
+
+  }
+}
+resource "aws_subnet" "public-subnet-2" {
+  vpc_id = aws_vpc.pokemon.id 
+  cidr_block = var.public_subnet2_cidr_block
+  availability_zone = "us-east-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    "Name" = "public-subnet-2"
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/pokemon-cluster" = "owned"
+
+  }
+}
+
+
+```
+### Step 6 : Route tables
+
+```
+resource "aws_route_table" "private-route-pokemon" {
+  vpc_id = aws_vpc.pokemon.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.pokemon-nat-gw.id
+  }
+
+  tags = {
+    Name = var.private_route_table_name
+  }
+}
+
+resource "aws_route_table" "public-route-pokemon" {
+  vpc_id = aws_vpc.pokemon.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.pokemon-igw.id
+  }
+
+  tags = {
+    Name = var.public_route_table_name
+  }
+}
+
+resource "aws_route_table_association" "private-subnet-1" {
+  subnet_id      = aws_subnet.private-subnet-1.id
+  route_table_id = aws_route_table.private-route-pokemon.id
+}
+
+resource "aws_route_table_association" "private-subnet-2" {
+  subnet_id      = aws_subnet.private-subnet-2.id
+  route_table_id = aws_route_table.private-route-pokemon.id
+}
+
+resource "aws_route_table_association" "public-subnet-1" {
+  subnet_id      = aws_subnet.public-subnet-1.id
+  route_table_id = aws_route_table.public-route-pokemon.id
+}
+
+resource "aws_route_table_association" "public-subnet-2" {
+  subnet_id      = aws_subnet.public-subnet-2.id
+  route_table_id = aws_route_table.public-route-pokemon.id
+}
+
+```
+### Step 7: Security Groups
 Create a file named security.tf. This file defines two security groups: one for public access and another for your RDS PostgreSQL database.
 
 - Public Security Group allows inbound traffic on ports 22 (SSH), 80 (HTTP), 8000, and 5432 (PostgreSQL), along with unrestricted outbound traffic.
@@ -123,7 +538,7 @@ resource "aws_security_group" "private_sg" {
         from_port   = 0
         to_port     = 0
         protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
+        security_groups = [ aws_security_group.public_sg.id ]
     }
     egress {
         from_port   = 0
@@ -138,7 +553,7 @@ resource "aws_security_group" "private_sg" {
 }
 ```
   
-### Step 6: RDS Database
+### Step 8: RDS Database
 Create a file named rds.tf. This file creates an RDS instance for a PostgreSQL database within the VPC.
 ```# Create a DB subnet group
 resource "aws_db_subnet_group" "db-subnet-group" {
@@ -173,9 +588,101 @@ resource "aws_db_instance" "pokemonDatabase" {
   backup_retention_period = 1
 }
 ```
+### Step 9: EventBridge with SNS topic/subscription
 
-### Step 7: Outputs
-Create a file named outputs.tf. This file defines outputs for various resources such as VPC ID, subnet IDs, and more for easy reference.
+```
+# Create an SNS Topic
+resource "aws_sns_topic" "db_snapshot_event_topic" {
+  name = var.sns_topic_name
+}
+
+# Subscribe edwinquito45@gmail.com to the SNS Topic
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.db_snapshot_event_topic.arn
+  protocol  = "email"
+  endpoint  = var.sns_topic_email
+}
+# Create IAM Role for EventBridge
+resource "aws_iam_role" "eventbridge_role" {
+  name = var.iam_role_name
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "scheduler.amazonaws.com",
+      },
+    }],
+  })
+}
+
+# Attach policies to the IAM Role
+resource "aws_iam_role_policy_attachment" "eventbridge_role_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"  # Adjust based on your specific needs
+  role       = aws_iam_role.eventbridge_role.name
+}
+
+resource "aws_scheduler_schedule" "rds_snapshot_schedule" {
+  name = "rds_snapshot_schedule"
+  flexible_time_window {
+    mode = "FLEXIBLE"
+    maximum_window_in_minutes = 5
+  }
+  
+
+  schedule_expression = "cron(0/10 * * * ? *)"
+
+
+  target {
+    arn = "arn:aws:scheduler:::aws-sdk:rds:createDBSnapshot"
+    role_arn = aws_iam_role.eventbridge_role.arn
+
+    input = jsonencode({
+      DbInstanceIdentifier = var.db_instance_identifier,  # Replace with the correct DB instance identifier
+      DbSnapshotIdentifier = "pokeclone-db-snapshot-schedule"
+    })
+  }
+
+  depends_on = [aws_db_instance.pokemonDatabase]
+}
+
+# Create CloudWatch Events rules
+resource "aws_cloudwatch_event_rule" "rds_snapshot_rule" {
+  name        = var.cloudwatch_event_rule_name
+  description = "Rule to trigger RDS snapshots"
+  schedule_expression = aws_scheduler_schedule.rds_snapshot_schedule.schedule_expression
+}
+
+# Add a target to the CloudWatch Events rule (SNS topic)
+resource "aws_cloudwatch_event_target" "rds_snapshot_target" {
+  rule      = aws_cloudwatch_event_rule.rds_snapshot_rule.name
+  arn       = aws_sns_topic.db_snapshot_event_topic.arn
+}
+
+resource "aws_sns_topic_policy" "db_snapshot_event_topic_policy" {
+  arn = aws_sns_topic.db_snapshot_event_topic.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Id      = "CloudWatchEventsToSNSPolicy",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "events.amazonaws.com",
+        },
+        Action = "sns:Publish",
+        Resource = "*",
+      },
+    ],
+  })
+}
+```
+
+### Step 10: Outputs
+Create a file named outputs.tf. This file defines outputs for various resources such as VPC ID, subnet IDs, and more for easy reference between modules or different directories of .tf files.
 ```output "vpc_id" {
     value = aws_vpc.pokemon.id
 }
@@ -236,44 +743,11 @@ output "db_instance_endpoint" {
     value = aws_db_instance.pokemonDatabase.endpoint
 }
 ```
+## Steps for EKS:
 
-## Steps for EKS
-
-### Step 1: Provider Configuration
-Sets up the Terraform provider for AWS. It specifies the AWS region and the profile to use for authentication.
-```provider "aws" {
-  region = var.aws_region
-  profile = var.aws_profile
-}
+### Step 1: Cluster roles/Creation
 ```
-
-Declares the required Terraform provider(s) and their versions. Here, it specifies the AWS provider.
-```
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
-    }
-  }
-}
-```
-
-Uses a custom module for VPC setup located at a specified path. This module is responsible for creating the VPC where the EKS cluster will reside.
-```
-module "VPC" {
-  source = "/path/to/VPC/module"
-}
-```
-
-### Step 2: IAM Roles and Policies for EKS
-Defines IAM roles and policies needed for the EKS cluster and worker nodes to operate. This includes roles for the EKS control plane, node groups, OIDC, autoscaler, and EBS CSI driver, along with necessary policy attachments.
-
-- **aws_iam_role** resources define roles with specific permissions.
-- **aws_iam_policy** resources define the actual permissions in JSON format.
-- **aws_iam_role_policy_attachment** resources attach policies to roles.
-
-```resource "aws_iam_role" "pokemon-demo" {
+resource "aws_iam_role" "pokemon-demo" {
   name = var.eks_cluster_role_name
 
   assume_role_policy = <<POLICY
@@ -320,9 +794,7 @@ resource "aws_iam_role_policy_attachment" "pokemon-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.pokemon-demo.name
 }
-```
-Creates an EKS cluster named **pokemon-cluster**, specifying its configuration, including the VPC setup through the module and the IAM role for the control plane.
-```
+
 resource "aws_eks_cluster" "pokemon-cluster" {
   name     = var.eks_cluster_name
   role_arn = aws_iam_role.pokemon-demo.arn
@@ -339,10 +811,10 @@ resource "aws_cloudwatch_log_group" "eks_control_plane_logs" {
   name              = var.eks_cluster_log_group_name
   retention_in_days = 7
 }
-```
-### Step 3: Worker Nodes
-Sets up worker node groups for the EKS cluster, defining their configurations such as instance types, scaling options, and IAM roles.
 
+```
+
+### Step 2: IAM roles for Worker nodes and creation
 ```
 # IAM Role for EKS Nodes
 resource "aws_iam_role" "pokemon-eks-node-group-nodes" {
@@ -414,12 +886,64 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
     source_security_group_ids = [module.VPC.public_security_group_id]
   }
 }
+# resource "aws_iam_role_policy_attachment" "nodes-AmazonSSMManagedInstanceCore" {
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonSSMManagedInstanceCore"
+#   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
+# }
+
+# # EKS Node Group for Frontend in Public Subnets
+# resource "aws_eks_node_group" "pokemon-backend-nodes" {
+#   cluster_name    = aws_eks_cluster.pokemon-cluster.name
+#   node_group_name = "pokemon-backend-nodes"
+#   node_role_arn   = aws_iam_role.pokemon-eks-node-group-nodes.arn
+
+#   subnet_ids = module.VPC.private_subnet_ids
+#   capacity_type  = "ON_DEMAND"
+#  instance_types = [var.eks_node_group_instance_type]
+
+#  scaling_config {
+#    desired_size = var.eks_node_group_desired_size
+#    max_size     = var.eks_node_group_max_size
+#    min_size     = var.eks_node_group_min_size
+# }
+
+#   update_config {
+#     max_unavailable = 1
+#   }
+#   tags = {
+#     Name = "pokemon-backend-nodes"
+#   }
+#   labels = {
+#     role = "backend"
+#   }
+
+
+
+#   depends_on = [
+#     aws_iam_role_policy_attachment.nodes-AmazonEKSWorkerNodePolicy,
+#     aws_iam_role_policy_attachment.nodes-AmazonEKS_CNI_Policy,
+#     aws_iam_role_policy_attachment.nodes-AmazonEC2ContainerRegistryReadOnly,
+#     aws_iam_role_policy_attachment.nodes-AmazonSSMManagedInstanceCore,
+#   ]
+#   remote_access {
+#     var.eks_node_group_key_name
+#     source_security_group_ids = [module.VPC.private_security_group_id]
+#   }
+# }
+data "aws_eks_node_group" "pokemon" {
+  cluster_name    = var.eks_cluster_name
+  node_group_name = var.eks_node_group_name
+  depends_on = [ aws_eks_node_group.pokemon-frontend-nodes ]
+}
+output "autoscaling_group_names" {
+  value = [for group in data.aws_eks_node_group.pokemon.resources[0].autoscaling_groups : group.name]
+}
+
+
 ```
-
-### Step 4: OIDC Provider
-Configures an OIDC provider for the cluster, allowing for IAM roles to be assumed by Kubernetes service accounts.
-
-```data "aws_iam_policy_document" "pokemon_oidc_assume_role_policy" {
+### Step 3: OIDC creation/IAM roles
+```
+data "aws_iam_policy_document" "pokemon_oidc_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
@@ -439,11 +963,11 @@ Configures an OIDC provider for the cluster, allowing for IAM roles to be assume
 
 resource "aws_iam_role" "pokemon_oidc" {
   assume_role_policy = data.aws_iam_policy_document.pokemon_oidc_assume_role_policy.json
-  name               = "pokemon-oidc"
+  name               = var.eks_oidc_role_name
 }
 
 resource "aws_iam_policy" "pokemon-policy" {
-  name = "pokemon-policy"
+  name = var.eks_oidc_policy_name
 
   policy = jsonencode({
     Statement = [{
@@ -479,13 +1003,12 @@ resource "aws_iam_openid_connect_provider" "eks" {
   # Update with the correct OIDC issuer URL for your EKS cluster
   url             = aws_eks_cluster.pokemon-cluster.identity[0].oidc[0].issuer
 }
+
+
 ```
-
-### Step 5: Cluster Autoscaler
-
-Sets up the IAM role and policy for the cluster autoscaler, allowing it to manage the scaling of worker nodes based on demand.
-
-```data "aws_iam_policy_document" "pokemon_cluster_autoscaler_assume_role_policy" {
+### Step 4: EKS cluster AutoScaler Role 
+```
+data "aws_iam_policy_document" "pokemon_cluster_autoscaler_assume_role_policy" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
@@ -505,11 +1028,11 @@ Sets up the IAM role and policy for the cluster autoscaler, allowing it to manag
 
 resource "aws_iam_role" "pokemon_cluster_autoscaler" {
   assume_role_policy = data.aws_iam_policy_document.pokemon_cluster_autoscaler_assume_role_policy.json
-  name               = "pokemon-cluster-autoscaler"
+  name               = var.eks_cluster_autoscaler_role_name
 }
 
 resource "aws_iam_policy" "pokemon_cluster_autoscaler" {
-  name = "pokemon-cluster-autoscaler"
+  name = var.eks_cluster_autoscaler_policy_name
 
   policy = jsonencode({
     Statement = [{
@@ -537,13 +1060,12 @@ resource "aws_iam_role_policy_attachment" "pokemon_cluster_autoscaler_attach" {
 output "pokemon_cluster_autoscaler_arn" {
   value = aws_iam_role.pokemon_cluster_autoscaler.arn
 }
+
+
 ```
-
-### Step 6: EBS CSI Driver
-
-Configures the IAM role and policy for the EBS CSI driver, enabling Kubernetes pods to use AWS EBS volumes for storage.
-
-```data "aws_iam_policy_document" "pokemon-ebs-csi" {
+### Step 5: EKS Cluster addon EBS CSI
+```
+data "aws_iam_policy_document" "pokemon-ebs-csi" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     effect  = "Allow"
@@ -560,6 +1082,7 @@ Configures the IAM role and policy for the EBS CSI driver, enabling Kubernetes p
     }
   }
 }
+
 resource "aws_iam_role" "eks_ebs_csi_driver" {
   assume_role_policy = data.aws_iam_policy_document.pokemon-ebs-csi.json
   name               = var.eks_csi_driver_role_name
@@ -575,18 +1098,12 @@ resource "aws_eks_addon" "pokemon_csi_driver" {
     addon_name               = "aws-ebs-csi-driver"
     addon_version            = "v1.28.0-eksbuild.1"
     service_account_role_arn = aws_iam_role.eks_ebs_csi_driver.arn
-  }```
+  }
 
-### Step 7: Cloud Watch
+```
 
-Monitor an Amazon EKS (Elastic Kubernetes Service) cluster using AWS CloudWatch and SNS (Simple Notification Service). The aim is to ensure the health, performance, and security of the EKS cluster by providing real-time alerts and a dashboard for ongoing monitoring.
-
-```// Create SNS topic for eks-cluster-alarms
-resource "aws_sns_topic" "eks-cluster-alarms" {
-  name = "eks-cluster-alarms"
-}
-
-// Subscription for SNS topic - sends notifications to the specified email
+### Step 6: Cloudwatch metrics/dashboard
+```
 // Create SNS topic for eks-cluster-alarms
 resource "aws_sns_topic" "eks-cluster-alarms" {
   name = var.sns_topic_name
@@ -680,14 +1197,10 @@ resource "aws_cloudwatch_metric_alarm" "eks_cluster_alarm" {
 
 }
 
-// CloudWatch dashboard for EKS Cluster metrics
-
 ```
-
-### Step 8: EKS node cloudwatch:
-create a comprehensive monitoring and notification system for Amazon Elastic Kubernetes Service (EKS) node groups, particularly focusing on auto scaling groups (ASGs).
-
-```// Create SNS topic for auto scaling groups in eks
+### Step 7: EKS nodes CLoudwatch
+```
+// Create SNS topic for auto scaling groups in eks
 resource "aws_sns_topic" "asg-alarms" {
   name = var.asg_sns_topic_name
 }
@@ -698,7 +1211,6 @@ resource "aws_sns_topic_subscription" "asg_alarms_email" {
   protocol  = "email"
   endpoint  = var.asg_sns_subscription_email
 }
-
 
 resource "aws_cloudwatch_dashboard" "Node-group-dashboard" {
   dashboard_name = var.asg_cloudwatch_dashboard_name
@@ -851,72 +1363,7 @@ resource "aws_cloudwatch_dashboard" "Node-line-graph" {
 }
 
 
-// CloudWatch dashboard for Node Group metrics
-resource "aws_cloudwatch_dashboard" "Node_group_line_metric" {
-  dashboard_name = "Node_group_line_Metrics"
 
-  dashboard_body = jsonencode({
-    widgets = [
-      {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "CPUUtilization",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ],
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "CPU Metrics Line"
-        }
-      },
-        {
-        type   = "metric"
-        x      = 0
-        y      = 0
-        width  = 12
-        height = 6
-
-        properties = {
-          metrics = [
-            [
-              "AWS/EC2",
-              "CPUCreditBalance",
-              "AutoScalingGroupName",
-              "${aws_eks_node_group.pokemon-frontend-nodes.node_group_name}"
-            ],
-          ]
-          period = 30
-          stat   = "Average"
-          region = "us-east-1"
-          title  = "CPU Metrics Line"
-        }
-      },
-      // Add more line widgets for other metrics
-    ]
-  })
-}
-```
-
-### Step 9: Outputs
-The ```outputs.tf``` snippet for Terraform defines an output named **eks** that provides a command for configuring **kubectl** to interact with an AWS Elastic Kubernetes Service (EKS) cluster named pokemon-cluster in the **us-east-1** region. When you apply your Terraform configuration, this output will display a command to update your local **kubeconfig** file, enabling kubectl to communicate with and manage your EKS cluster. This simplifies the process of setting up kubectl for cluster management by providing a ready-to-use command post-deployment.
-
-```output "eks" {
-  value = <<EOF
-###################################### KUBECONFIG ###########################################
-
-        aws eks --region us-east-1 update-kubeconfig --name pokemon-cluster
-EOF
-}
 ```
 
 ## Instructions
