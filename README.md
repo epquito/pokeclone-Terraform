@@ -1,5 +1,7 @@
 # Pokemon Terraform Configuration for Amazon EKS
 
+  ![Alt Text](https://github.com/epquito/pokeclone-Terraform/blob/master/AWS-Terraform-Architecture-Structure.jpeg)
+
 ## Introduction
 This project provides a comprehensive Terraform configuration designed for deploying a highly available and scalable Amazon Elastic Kubernetes Service (EKS) environment. It includes setups for a VPC, subnets, Internet Gateway (IGW), NAT Gateway, route tables, and an Amazon RDS instance, ensuring a robust infrastructure for containerized applications.
 
