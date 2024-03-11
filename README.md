@@ -1383,7 +1383,9 @@ Use ```terraform apply``` to apply the configuration. Confirm the action when pr
 
 After deployment, configure ```kubectl``` with the EKS cluster by running ```aws eks --region us-east-1 update-kubeconfig --name pokemon-cluster```.
 
+### 5. Export Kubectl
 
+Once you get the kubeconfig yml file in the directory where the K8s manifest files are located use ```export KUBECONFIG=kubeconfig.yml```. This allows you o manipulate the EKS Cluster within local Terminal. But it will only work if you have the kubetl installed wihtin the terminal
 
 ## Conclusion
 This setup will result in a fully functional AWS EKS cluster with configured IAM roles, VPC, worker nodes, OIDC for service accounts, autoscaling, and EBS CSI for persistent storage. Each step ensures the necessary permissions and configurations are in place for a secure and scalable Kubernetes environment on AWS.
