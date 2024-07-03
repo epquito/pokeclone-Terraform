@@ -1704,7 +1704,9 @@ module "CloudWatch" {
 
 }
 
-
+```
+## Final root Variables files
+```
 # AWS provider
 
 variable "aws_region" {
