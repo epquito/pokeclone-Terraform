@@ -49,12 +49,21 @@ resource "aws_iam_role_policy_attachment" "pokemon-AmazonEKSClusterPolicy" {
 resource "aws_eks_cluster" "pokemon-cluster" {
   name     = var.eks_cluster_name
   role_arn = aws_iam_role.pokemon-demo.arn
+  # version = "1.30"
+  version = var.eks_cluster_version
+  
 
   vpc_config {
-    endpoint_private_access = false 
+    endpoint_private_access = true 
     endpoint_public_access = true
-    subnet_ids = module.VPC.subnet_ids
+    subnet_ids = var.module_subnet_ids
+    security_group_ids = var.eks_node_group_security_group ## change module value to new vpc outputs
   }
+  kubernetes_network_config {
+    service_ipv4_cidr = var.cluster_ipv4_range
+  }
+
+
   enabled_cluster_log_types = ["api", "authenticator", "audit", "scheduler", "controllerManager"]
   depends_on = [aws_iam_role_policy_attachment.pokemon-AmazonEKSClusterPolicy]
 }

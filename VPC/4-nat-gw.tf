@@ -1,5 +1,5 @@
 resource "aws_eip" "pokemon-nat" {
-    vpc = true
+    domain = "vpc"
     tags = {
       Name = var.nat_gateway_eip_name
     }

@@ -33,15 +33,20 @@ resource "aws_iam_role_policy_attachment" "nodes-AmazonEC2ContainerRegistryReadO
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.pokemon-eks-node-group-nodes.name
 }
+
 # EKS Node Group for Frontend in Public Subnets
 resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   cluster_name    = aws_eks_cluster.pokemon-cluster.name
   node_group_name = var.eks_node_group_name
   node_role_arn   = aws_iam_role.pokemon-eks-node-group-nodes.arn
+  
 
-  subnet_ids = module.VPC.public_subnet_ids
+  subnet_ids = var.module_public_subnet_ids  ## change to new VPC module subnet IDs
   capacity_type  = "ON_DEMAND"
-  instance_types = [var.eks_node_group_instance_type]
+  # ami_type = "AL2_x86_64"
+  ami_type = var.node_group_ami_type
+  instance_types = [var.eks_node_group_instance_type] 
+  
 
   scaling_config {
     desired_size = var.eks_node_group_desired_size
@@ -65,7 +70,7 @@ resource "aws_eks_node_group" "pokemon-frontend-nodes" {
   ]
   remote_access {
     ec2_ssh_key = var.eks_node_group_key_name
-    source_security_group_ids = [module.VPC.public_security_group_id]
+    source_security_group_ids = var.eks_node_group_security_group
   }
 }
 # resource "aws_iam_role_policy_attachment" "nodes-AmazonSSMManagedInstanceCore" {

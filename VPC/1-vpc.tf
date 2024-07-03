@@ -4,6 +4,7 @@ resource "aws_vpc" "pokemon" {
     enable_dns_support = true
     enable_dns_hostnames = true
     tags = {
-      Name = "pokemon"
+      Name = var.vpc_name
     }
 }
+

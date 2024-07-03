@@ -1,9 +1,3 @@
-EKS/.terraform
-EKS/.terraform.lock.hcl
-EKS/.terraform.tfstate.lock.info
-EKS/terraform.tfstate
-EKS/terraform.tfstate.backup
-EKS/10-variables.tf 
-VPC/9-variables.tf 
-
-
+variables.tf
+terraform*
+.terraform*
